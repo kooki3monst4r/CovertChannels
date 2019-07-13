@@ -1,60 +1,75 @@
 import tweepy
-import json
 
 
-
-# Authenticate
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
-
-# api is the main tweepy class we're going to use to make this work
-api = tweepy.API(auth)
-
-# Check to make sure we can authenticate before we begin. Prevents ya boi from trying to do this without an internet connection
-try:
-    api.verify_credentials()
-    print("I'm in...")
-except:
-    print("You didn't say the magic word!")
-
-# # Pulls the last 20 tweets from the timeline
-# timeline = api.home_timeline()
-#
-# # This is the exit condition. We will continue going through the loop until we find the EOF delimiter.
-# EOF = False
-#
-# while not EOF:
-# for tweet in timeline:
-#     print(f"{tweet.user.name} said {tweet.text}")
+def login():
+    # Twitter credentials
 
 
-# This listener will print out all Tweets it receives
-class PrintListener(tweepy.StreamListener):
-    def on_data(self, data):
-        # Decode the JSON data
-        tweet = json.loads(data)
+    # Authenticate
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
 
-        # Print out the Tweet
-        print('@%s: %s' % (tweet['user']['screen_name'], tweet['text'].encode('ascii', 'ignore')))
+    # api is the main tweepy class we're going to use to make this work
+    api = tweepy.API(auth)
 
-    def on_error(self, status):
-        print(status)
+    # Check to make sure we can authenticate before we begin.
+    # Prevents ya boi from trying to do this without an internet connection
+    try:
+        api.verify_credentials()
+        print("I'm in...")
+    except:
+        print("You didn't say the magic word!")
 
-    def on_status(self, status):
-        print(status)
+    return api
+
+
+# Method reaches out to Twitter, pulls down new messages, and returns a string with them in it
+def get_message(api):
+    # List to hold the extracted message. Using a list rather than a string because a string is immutable.
+    # Not good practice to continually modify an immutable
+    encoded_msg_list = []
+
+    # Go through each message in the timeline we're posting the tweets to
+    for status in tweepy.Cursor(api.user_timeline, screen_name='@DailyDoseOfSad1', tweet_mode="extended").items():
+        # print(status.full_text)
+        encoded_msg_list.insert(0, status.full_text[-7])  # Prepend the last character (the sensitive message) into a list
+
+    # Join the list to an empty string once it's full, to avoid memory allocation to immutable string type
+
+    # List to hold binary message
+    msg_list = []
+
+    # Post process the string. A . is a 0 and a ! is a 1.
+    for char in encoded_msg_list:
+        if char == ".":
+            msg_list.append('0')
+        elif char == '!':
+            msg_list.append('1')
+
+    msg = ''.join(msg_list)
+
+    return msg
+
+
+# Converts binary string to bits
+def text_from_bits(bits, encoding='utf-8', errors='surrogatepass'):
+    n = int(bits, 2)
+    return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode(encoding, errors) or '\0'
 
 
 if __name__ == '__main__':
-    listener = PrintListener()
+    api = login()
 
-    # Show system message
-    print('I will now print Tweets containing "Python"! ==>')
+    msg = get_message(api)
 
-    # # Authenticate
-    # auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    # auth.set_access_token(access_token, access_token_secret)
+    # convert binary to text
+    original_input_file = text_from_bits(msg)
 
-    # Connect the stream to our listener
-    stream = tweepy.Stream(auth, listener)
-    stream.
-    # stream.filter(track=['@channingtatum'])
+    # Append converted message to our text file
+    f = open('msg.txt', 'a+')
+    f.write(original_input_file + ' end msg ')
+    f.close()
+
+    # print out of secret message
+    print(original_input_file)
+
