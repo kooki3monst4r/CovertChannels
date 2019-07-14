@@ -1,8 +1,9 @@
 import tweepy
 
 
+# Logs into api.twitter.com using the app credentials the team created.
+# Returns an api for the rest of the program to use
 def login():
-    # Twitter credentials
 
 
     # Authenticate
@@ -31,10 +32,12 @@ def get_message(api):
 
     # Go through each message in the timeline we're posting the tweets to
     for status in tweepy.Cursor(api.user_timeline, screen_name='@DailyDoseOfSad1', tweet_mode="extended").items():
-        # print(status.full_text)
-        encoded_msg_list.insert(0, status.full_text[-7])  # Prepend the last character (the sensitive message) into a list
-
-    # Join the list to an empty string once it's full, to avoid memory allocation to immutable string type
+        if status.full_text[-6] == '#':
+            encoded_msg_list.insert(0, status.full_text[
+                -7])  # Prepend the last character (the sensitive message) into a list
+        elif status.full_text[-7] == '#':
+            encoded_msg_list.insert(0, status.full_text[
+                -8])  # Prepend the last character (the sensitive message) into a list
 
     # List to hold binary message
     msg_list = []
@@ -46,30 +49,30 @@ def get_message(api):
         elif char == '!':
             msg_list.append('1')
 
-    msg = ''.join(msg_list)
-
-    return msg
+    # Join the list to an empty string once it's full, to avoid memory allocation to immutable string type
+    return ''.join(msg_list)
 
 
 # Converts binary string to bits
 def text_from_bits(bits, encoding='utf-8', errors='surrogatepass'):
-    n = int(bits, 2)
-    return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode(encoding, errors) or '\0'
-
+    if bits.__len__() != 0:
+        int_msg = int(bits, 2)
+        return int_msg.to_bytes((int_msg.bit_length() + 7) // 8, 'big').decode(encoding, errors) or '\0'
+    else:
+        return "No valid message found"
 
 if __name__ == '__main__':
+    # Login to api.twitter.com
     api = login()
 
+    # Gets all messages from the hosting account
     msg = get_message(api)
 
-    # convert binary to text
-    original_input_file = text_from_bits(msg)
+    # Converts the extracted binary message to text
+    secret_msg = text_from_bits(msg)
+    # print(secret_msg)
 
     # Append converted message to our text file
-    f = open('msg.txt', 'a+')
-    f.write(original_input_file + ' end msg ')
-    f.close()
-
-    # print out of secret message
-    print(original_input_file)
-
+    file = open('msg.txt', 'a+')
+    file.write(secret_msg + ' EOF \n')
+    file.close()
