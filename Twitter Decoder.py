@@ -1,16 +1,20 @@
 import tweepy
 
-
-# Logs into api.twitter.com using the app credentials the team created.
-# Returns an api for the rest of the program to use
 def login():
+    """Logs into api.twitter.com using the app credentials the team created. Returns an api for the rest of the
+    program to use"""
 
+    # Twitter credentials
+    consumer_key = 'XXXX'
+    consumer_secret = 'XXXX'
+    access_token = 'XXXX'
+    access_token_secret = 'XXXX'
 
     # Authenticate
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
-    # api is the main tweepy class we're going to use to make this work
+    # API is the main tweepy class we're going to use to interact with twitter
     api = tweepy.API(auth)
 
     # Check to make sure we can authenticate before we begin.
@@ -24,8 +28,9 @@ def login():
     return api
 
 
-# Method reaches out to Twitter, pulls down new messages, and returns a string with them in it
 def get_message(api):
+    """Method reaches out to Twitter, pulls down new messages, and returns a string with them in it"""
+
     # List to hold the extracted message. Using a list rather than a string because a string is immutable.
     # Not good practice to continually modify an immutable
     encoded_msg_list = []
@@ -53,8 +58,8 @@ def get_message(api):
     return ''.join(msg_list)
 
 
-# Converts binary string to bits
 def text_from_bits(bits, encoding='utf-8', errors='surrogatepass'):
+    """Converts binary string to bits"""
     if bits.__len__() != 0:
         int_msg = int(bits, 2)
         return int_msg.to_bytes((int_msg.bit_length() + 7) // 8, 'big').decode(encoding, errors) or '\0'

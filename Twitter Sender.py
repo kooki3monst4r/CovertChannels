@@ -2,30 +2,32 @@ import tweepy
 import time
 import random
 
-# Creds
+# Twitter credentials
 consumer_key = 'XXXX'
 consumer_secret = 'XXXX'
 access_token = 'XXXX'
 access_token_secret = 'XXXX'
 
-# Auth
+# Authenticate
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
-# Definition to convert text to binary
 def text_to_bits(text, encoding='utf-8', errors='surrogatepass'):
+    """Definition to convert text to binary"""
     bits = bin(int.from_bytes(text.encode(encoding, errors), 'big'))[2:]
     return bits.zfill(8 * ((len(bits) + 7) // 8))
 
 
-def main():
-    # Create API object
+if __name__ == '__main__':
+    # API is the main tweepy class we're going to use to interact with twitter
     api = tweepy.API(auth)
 
-    # Create a tweet
-    startmess = "A drop from the moon dropped and disappeared into a room into my heart *nuzzles*"
-    endmess = "So tell me, what’s it like living in a constant haze of stupidity?"
+    # The start message and end message will indicate to the decoder the beginning and end of a new encoded
+    # transmission. This isn't fully used in this version, but is built in for future use.
+    startmsg = "A drop from the moon dropped and disappeared into a room into my heart *nuzzles*"
+    endmsg = "So tell me, what’s it like living in a constant haze of stupidity?"
 
+    # The . at the end indicates to the decoder this is a 0
     message0 = ["We each need to find our own inspiration. Sometimes, it is not easy.",
                 "Giving up is what kills people.",
                 "The world is not perfect, but it is there for us trying the best it can.",
@@ -50,6 +52,7 @@ def main():
                 "If I had faith then I would blame all the bad things on God. Then I would be sure it wasn’t my fault.",
                 "Don’t go. Don’t go. Please don’t go. Please don’t leave me behind."]
 
+    # The ! at the end indicates to the decoder this is a 1
     message1 = ["I know as much of games as hugs and puppies, and care for them even less!",
                 "Don’t talk, it makes you sound stupid!",
                 "You try to sound like you think through things, when in fact you’re not thinking at all!",
@@ -81,6 +84,8 @@ def main():
                 "I don’t care about no artificial humans!",
                 "Ranma, please. I like you just the way you are. Please don’t fight anymore. I’m begging you!"]
 
+    # Twitter will not allow you to post the same tweet twice, so we use these hashtags to add randomness to it and
+    # reduce the likelihood of a collision.
     hashtags = ["#olive",
                 "#nadir",
                 "#legal",
@@ -115,12 +120,12 @@ def main():
     # Open Message File
     f = open('message.txt', 'r')
 
-    # set contents of text file to variable file_contents
+    # Read in the contents on the sensitive message
     input_contents = f.read()
     # input_contents = ''
     print(input_contents)
 
-    # Convert input file to binary
+    # Convert message to binary
     output_contents = text_to_bits(input_contents)
     print(output_contents)
 
@@ -134,8 +139,8 @@ def main():
     #    0: "."
     #    1: "1"
     quote = ''
-    api.update_status(startmess + random.choice(hashtags))
-    time.sleep(60)
+    api.update_status(startmsg + random.choice(hashtags))  # This sends the start tweet to twitter
+    time.sleep(60) # Wait 60 seconds before sending another tweet
 
     for i in range(len(binary_msg)):
         if binary_msg[i] == '1':
@@ -144,18 +149,19 @@ def main():
         elif binary_msg[i] == '0':
             quote = random.choice(message0) + random.choice(hashtags)
             print(quote)
-        Post a tweet every 60 sec
+
+        # This catches if we have a collision and try to post the same message twice. If we do, we will resend with a
+        # different message and different hashtag that's not in the other list.
         try:
             api.update_status(quote)
         except:
             if binary_msg[i] == '1':
-               quote = random.choice(message1) + '#death'
+                quote = random.choice(message1) + '#death'
             elif binary_msg[i] == '0':
-               quote = random.choice(message0) + '#death'
+                quote = random.choice(message0) + '#death'
             api.update_status(quote)
+        # Twitter thinks we're a bot if we send messages every 60 seconds, so this changes it to send it randomly
+        # between 1 and 5 minutes
         n = random.randint(60, 300)
         time.sleep(n)
-    api.update_status(endmess + random.choice(hashtags))
-
-
-main()
+    api.update_status(endmsg + random.choice(hashtags))  # This sends the end message tweet to twitter
